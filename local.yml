@@ -1,0 +1,72 @@
+services:
+  traefik:
+    container_name: traefik
+    image: docker.io/traefik:v3.2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./backend/docker/local/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+    networks:
+      - genshow_local_network
+    command: 
+      - --providers.docker
+  postgres:
+    build:
+      context: .
+      dockerfile: ./backend/docker/local/postgres/Dockerfile
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./.env/.env.local
+    networks:
+      - genshow_local_network
+  api: &api
+    build:
+      context: .
+      dockerfile: ./backend/docker/local/fastapi/Dockerfile
+    volumes:
+      - .:/src
+      - ./backend/app/logs:/src/backend/app/logs
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./.env/.env.local
+    depends_on:
+      - postgres
+      - mailpit
+    command: /start.sh
+    networks:
+      - genshow_local_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.routers.api.rule=Host(`api.localhost`)"
+      - "traefik.http.routers.api.service=api-service"
+      - "traefik.http.services.api-service.loadbalancer.server.port=8000"
+  mailpit:
+    image: docker.io/axllent/mailpit:v1.20.3
+    container_name: mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    volumes:
+      - genshow_mailpit_data:/data
+    environment:
+      MP_MAX_MESSAGE_SIZE: "10485760"
+      MP_DATA_FILE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPY_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    networks:
+      - genshow_local_network
+networks:
+  genshow_local_network:
+    external: true
+volumes:
+  postgres_data:
+  genshow_mailpit_data:
