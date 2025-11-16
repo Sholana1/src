@@ -11,8 +11,10 @@ services:
       - ./backend/docker/local/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
     networks:
       - genshow_local_network
-    command: 
-      - --providers.docker
+    command:
+      - --providers.docker=true
+      - --entrypoints.web.address=:80
+
   postgres:
     build:
       context: .
@@ -26,10 +28,18 @@ services:
       - ./.env/.env.local
     networks:
       - genshow_local_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   api: &api
     build:
       context: .
       dockerfile: ./backend/docker/local/fastapi/Dockerfile
+    container_name: api
     volumes:
       - .:/src
       - ./backend/app/logs:/src/backend/app/logs
@@ -38,8 +48,14 @@ services:
     env_file:
       - ./.env/.env.local
     depends_on:
-      - postgres
-      - mailpit
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
     command: /start.sh
     networks:
       - genshow_local_network
@@ -49,6 +65,7 @@ services:
       - "traefik.http.routers.api.rule=Host(`api.localhost`)"
       - "traefik.http.routers.api.service=api-service"
       - "traefik.http.services.api-service.loadbalancer.server.port=8000"
+
   mailpit:
     image: docker.io/axllent/mailpit:v1.20.3
     container_name: mailpit
@@ -60,13 +77,79 @@ services:
     environment:
       MP_MAX_MESSAGE_SIZE: "10485760"
       MP_DATA_FILE: /data/mailpit.db
-      MP_SMTP_AUTH_ACCEPY_ANY: 1
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
     networks:
       - genshow_local_network
+
+  redis:
+    image: docker.io/redis:7.0-alpine
+    container_name: redis
+    command: redis-server --appendonly yes
+    networks:
+      - genshow_local_network
+
+  rabbitmq:
+    image: docker.io/rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    volumes:
+      - genshow_rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - genshow_local_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rabbitmq.entrypoints=web"
+      - "traefik.http.routers.rabbitmq.rule=Host(`rabbitmq.localhost`)"
+      - "traefik.http.routers.rabbitmq.service=rabbitmq-service"
+      - "traefik.http.services.rabbitmq-service.loadbalancer.server.port=15672"
+
+  celeryworker:
+    <<: *api
+    container_name: celeryworker
+    ports: []
+    volumes: []       # Workers don't need your full source tree mounted
+    command: /start-celeryworker.sh
+    depends_on:
+      - redis
+      - rabbitmq
+
+  flower:
+    <<: *api
+    container_name: flower
+    ports:
+      - "5555:5555"
+    volumes:
+      - genshow_flower_data:/data
+    command: /start-flower.sh
+    depends_on:
+      - redis
+      - rabbitmq
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.flower.entrypoints=web"
+      - "traefik.http.routers.flower.rule=Host(`flower.localhost`)"
+      - "traefik.http.routers.flower.service=flower-service"
+      - "traefik.http.services.flower-service.loadbalancer.server.port=5555"
+
+  celerybeat:
+    <<: *api
+    container_name: celerybeat
+    ports: []
+    volumes: []
+    command: /start-celerybeat.sh
+    depends_on:
+      - redis
+      - rabbitmq
+
 networks:
   genshow_local_network:
     external: true
+
 volumes:
   postgres_data:
   genshow_mailpit_data:
+  genshow_rabbitmq_data:
+  genshow_flower_data:
