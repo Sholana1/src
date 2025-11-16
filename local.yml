@@ -127,6 +127,9 @@ services:
     depends_on:
       - redis
       - rabbitmq
+    environment:
+      CELERY_FLOWER_USER: admin
+      CELERY_FLOWER_PASSWORD: admin123
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.flower.entrypoints=web"
