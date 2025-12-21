@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
     model_config = SettingsConfigDict(
-        env_file="../../.env/.env.local",
+        env_file="../../.envs/.env.local",
         env_ignore_empty=True,
         extra="ignore", 
         env_file_encoding="utf-8",
@@ -29,5 +29,9 @@ class Settings(BaseSettings):
     RABBITMQ_PORT: int = 5672
     RABBITMQ_USER: str = "guest"
     RABBITMQ_PASSWORD: str = "guest"
+
+    OTP_EXPIRATION_MINUTES: int = 2 if ENVIRONMENT == 'local' else 5
+    LOGIN_ATTEMPT: int = 3
+    LOCKOUT_DURATION_MINUTES: int = 2 if ENVIRONMENT == 'local' else 5
 
 settings = Settings() 

@@ -25,7 +25,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
-      - ./.env/.env.local
+      - ./.envs/.env.local
     networks:
       - genshow_local_network
     healthcheck:
@@ -46,7 +46,7 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - ./.env/.env.local
+      - ./.envs/.env.local
     depends_on:
       postgres:
         condition: service_healthy
@@ -65,6 +65,9 @@ services:
       - "traefik.http.routers.api.rule=Host(`api.localhost`)"
       - "traefik.http.routers.api.service=api-service"
       - "traefik.http.services.api-service.loadbalancer.server.port=8000"
+      - "traefik.http.services.api-service.loadbalancer.healthcheck.path=/health"
+      - "traefik.http.services.api-service.loadbalancer.healthcheck.interval=30s"
+      - "traefik.http.services.api-service.loadbalancer.healthcheck.timeout=10s"
 
   mailpit:
     image: docker.io/axllent/mailpit:v1.20.3
