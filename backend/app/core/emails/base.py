@@ -25,7 +25,7 @@ class EmailTemplate:
             plain_template = email_env.get_template(cls.template_name_plain)
             
             html_content = html_template.render(**context)
-            plain_cotent = html_template.render(**context)
+            plain_cotent = plain_template(**context)
             
             task = send_email_task.delay(
                 recipients = recipient_lists,
