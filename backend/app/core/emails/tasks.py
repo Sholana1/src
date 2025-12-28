@@ -11,27 +11,24 @@ logger = get_logger()
     name="send_email_task",
     bind=True,
     max_retries=3,
-    soft_time_limit=60,
-    autoretry_for=(Exception,),
-    retry_backoff=True,
-    retry_backoff_max=60
+    autoretry_for=(Exception,), # This only works if you don't catch the exception yourself
+    retry_backoff=True
 )
-
-def send_email_task(
-    self,*,recipients: list[str], subject: str, html_content:str, plain_content:str
-) -> bool:
-    try:
-        message = MessageSchema(
-            subject = subject,
-            recipients = recipients,
-            body = html_content,
-            subject = MessageType.html,
-            alternative_body = plain_content,
-            maltipart_subtype = MultipartSubtypeEnum.alternative
-        )
-        asyncio.run(fastmail.send_message(message))
-        logger.info(f"Email successfully sent to {recipients} with subject {subject}")
-        return True
-    except Exception as e:
-        logger.error(f"Failed to send email to {recipients}: Error: {str(e)}")
-        return False
+def send_email_task(self, *, recipients, subject, html_content, plain_content):
+    # Create the message
+    message = MessageSchema(
+        subject=subject,
+        recipients=recipients,
+        body=html_content,
+        subtype=MessageType.html,
+        alternative_body=plain_content,
+        multipart_subtype=MultipartSubtypeEnum.alternative
+    )
+    
+    # We use a standard loop to avoid 'Event loop is closed' errors
+    loop = asyncio.get_event_loop()
+    
+    # REMOVE the local try/except so Celery can see the error and RETRY
+    loop.run_until_complete(fastmail.send_message(message))
+    logger.info(f"Email sent to {recipients}")
+    return True

@@ -1,3 +1,4 @@
+import uuid
 from enum import Enum
 from sqlmodel import SQLModel, Field
 from pydantic import EmailStr, field_validator
@@ -59,11 +60,31 @@ class UserCreateSchema(BaseUserSchema):
         if "password" in values.data and v != values.data["password"]:
             raise HTTPException(
                 status_code = status.HTTP_400_BAD_REQUEST,
-                details = {
+                detail = {
                     "status": "error",
                     "message": "Password do not match",
                     "action": "Please ensure that the password you entered match"
                 }
             )
         return v
+
+class UserReadSchema(BaseUserSchema):
+    id: uuid.UUID
+    full_name: str
+
+class EmailRequestSchema(SQLModel):
+    email: EmailStr
+
+class LoginRequestSchema(SQLModel):
+    email: EmailStr
+    password: str = Field(
+        min_length=8,
+        max_length=40
+    )
     
+class OTPVerifyRequestSchema(SQLModel):
+    email: EmailStr
+    otp: str = Field(
+        min_length=6,
+        max_length=6
+    )

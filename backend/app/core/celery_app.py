@@ -15,7 +15,7 @@ celery_app.conf.update(
     task_send_sent_event=True,
     result_extended=True,
     result_backend_always_retry=True,
-    result_exires=3600,
+    result_expires=3600,
     task_time_limit=5 * 60,
     task_soft_time_limit=5 * 60,
     worker_send_task_events=True,
@@ -33,7 +33,7 @@ celery_app.conf.update(
 )
 
 celery_app.autodiscover_tasks(
-    packages=["backend.app.core.email"],
+    packages=["backend.app.core.emails"],
     related_name="tasks",
     force = True
 )

@@ -16,23 +16,34 @@ class EmailTemplate:
     subject: str
     
     @classmethod
-    async def send_email(cls, email_to: str | list[str], context: dict, subject_override: str | None = None) -> None:
+    async def send_email(
+        cls,
+        email_to: str | list[str],
+        context: dict,
+        subject_override: str | None = None
+    ) -> None:
         try:
             recipient_lists = [email_to] if isinstance(email_to, str) else email_to
+
             if not cls.template_name or not cls.template_name_plain:
                 raise ValueError("Both HTML and plain text email templates are required")
+
             html_template = email_env.get_template(cls.template_name)
             plain_template = email_env.get_template(cls.template_name_plain)
-            
+
             html_content = html_template.render(**context)
-            plain_cotent = plain_template(**context)
-            
+            plain_content = plain_template.render(**context)
+
             task = send_email_task.delay(
-                recipients = recipient_lists,
-                subject= subject_override or cls.subject,
-                html_content = html_content,
-                plain_cotent = plain_cotent
+                recipients=recipient_lists,
+                subject=subject_override or cls.subject,
+                html_content=html_content,
+                plain_content=plain_content
             )
+
             logger.info(f"Email task {task.id} queued for: {recipient_lists}")
+
         except Exception as e:
-            logger.error(f"Failed to queue email task for {recipient_lists}: Error: {str(e)}")
+            logger.error(
+                f"Failed to queue email task for {recipient_lists}: Error: {str(e)}"
+            )

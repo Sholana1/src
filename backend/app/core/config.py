@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     DATABASE_URL: str = ""
     MAIL_FROM: str = ""
     MAIL_FROM_NAME: str = ""
+    MAILGUN_SMTP_SERVER: str = "smtp.mailgun.org"
+    MAILGUN_SMTP_PORT: int = 587
+    MAILGUN_SMTP_USERNAME: str = ""
+    MAILGUN_SMTP_PASSWORD: str = ""
+
     SMTP_HOST: str = "mailpit"
     SMTP_PORT: int = 1025
     MAILPIT_UI_PORT: int = 8025
@@ -33,5 +38,11 @@ class Settings(BaseSettings):
     OTP_EXPIRATION_MINUTES: int = 2 if ENVIRONMENT == 'local' else 5
     LOGIN_ATTEMPT: int = 3
     LOCKOUT_DURATION_MINUTES: int = 2 if ENVIRONMENT == 'local' else 5
+    ACTIVATION_TOKEN_EXPIRATION_MINUTES: int = 2 if ENVIRONMENT == 'local' else 5
+    
+    API_BASE_URL: str = ""
+    SUPPORT_EMAIL: str = ""
+    JWT_SECRET_KEY: str = ""
+    JWT_ALGORITHM: str = "HS256"
 
 settings = Settings() 
