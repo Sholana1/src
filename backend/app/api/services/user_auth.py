@@ -325,7 +325,7 @@ class UserAuthService:
             detail={
                 "status": "error",
                 "message": "Your account is temporarily locked",
-                "action": "Please try again after {remaining_minutes} minutes",
+                "action": f"Please try again after {remaining_minutes} minutes",
                 "lockout_remaining_minutes": remaining_minutes
                 
             }
