@@ -118,7 +118,7 @@ async def verify_login_otp(
         access_token = create_jwt_token(user.id)
         refresh_token = create_jwt_token(
             user.id,
-            token_type=settings.COOKIE_REFRESH_NAME,
+            type=settings.COOKIE_REFRESH_NAME,
         )
 
         set_auth_cookies(response, access_token, refresh_token)

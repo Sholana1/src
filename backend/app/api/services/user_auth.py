@@ -286,7 +286,7 @@ class UserAuthService:
             return user
         except HTTPException as http_ex:
             raise http_ex
-        except HTTPException as e:
+        except Exception as e:
             logger.error(f"Error during OTP verification: {e}")
             raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -349,6 +349,43 @@ class UserAuthService:
         
         await session.commit()
         await session.refresh(user)
+    
+    async def reset_password(self, token:str, new_password:str, session:AsyncSession)-> None:
+        try:
+            payload = jwt.decode(
+                token,
+                settings.JWT_SECRET_KEY,
+                algorithms=[settings.JWT_ALGORITHM]
+            )
+            if payload.get("type") != "password_reset":
+                raise ValueError("Invalid reset token")
+            user_id = uuid.UUID(payload["id"])
+            
+            user = await self.get_user_by_id(user_id, session, include_inactive=True)
+            
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail={
+                        "status": "error",
+                        "message": "User not found"
+                    }
+                )
+            user.hashed_password = generate_password_hash(new_password)
+            await self.reset_user_state(user, session, clear_otp=True, log_action=True)
+            
+            await session.commit()
+            await session.refresh(user)
+            
+            logger.info(f"Password reset successful user {user.email}")
+        except jwt.ExpiredSignatureError:
+            raise ValueError("Password reset token expired")
+        except jwt.InvalidTokenError:
+            raise ValueError("Invalid password reset token")
+        except Exception as e:
+            logger.error(f"Failed to reset password: {e}")
+            raise
+        
 
 user_auth_service = UserAuthService()
             
