@@ -4,7 +4,7 @@ from backend.app.core.logging import get_logger
 
 logger = get_logger()
 
-router = APIRouter("/auth")
+router = APIRouter(prefix="/auth")
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
 async def logout(response:Response) -> dict:

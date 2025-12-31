@@ -9,7 +9,7 @@ from backend.app.core.config import settings
 
 logger = get_logger()
 
-router = APIRouter("/auth")
+router = APIRouter(prefix="/auth")
 @router.post("/refresh", status_code=status.HTTP_200_OK)
 async def refresh_access_token(
     response: Response,

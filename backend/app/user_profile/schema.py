@@ -32,7 +32,7 @@ class EmploymentStatusSchema(str,Enum):
     Student = "Student"
     Retired = "Retired"
     
-class ProfileBaseSchema(SQLModel):
+class ProfileBaseSchema(SQLModel, table=False):
     title: SalutationSchema
     gender: GenderSchema
     date_of_birth: date
