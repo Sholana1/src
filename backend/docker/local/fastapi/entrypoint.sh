@@ -39,4 +39,6 @@ while True:
 END
 
 >&2 echo "Database is ready. Starting the application..."
+
+alembic upgrade head
 exec "$@"
