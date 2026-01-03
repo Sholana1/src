@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from backend.app.user_profile.models import Profile
-from backend.app.user_profile.schema import ProfileCreateSchema
+from backend.app.user_profile.schema import ProfileCreateSchema, ProfileUpdateSchema
 from backend.app.core.logging import get_logger
 
 logger = get_logger()
@@ -50,5 +50,44 @@ async def create_user_profile(user_id:uuid.UUID, profile_data:ProfileCreateSchem
             detail={
                 "status": "error",
                 "message": "Failed to fetch user profile"
+            }
+        )
+
+async def update_user_profile(
+    user_id:uuid.UUID,
+    profile_data:ProfileUpdateSchema,
+    session:AsyncSession
+) -> Profile:
+    try:
+        profile = await get_user_profile(user_id, session)
+        if not profile:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "status": "error",
+                    "message": "Profile not found for this user"
+                }
+            )
+        profile_data_dict = profile_data.model_dump(exclude_unset=True)
+        for key, value in profile_data_dict.items():
+            if key not in [
+                "profile_photo_url",
+                "id_photo_url",
+                "signature_photo_url"
+            ]:
+                setattr(profile, key, value)
+        await session.commit()
+        await session.refresh(profile)
+        logger.info(f"Updated profile for user {user_id}")
+        return profile
+    except HTTPException as http_ex:
+        raise http_ex
+    except Exception as e:
+        logger.error(f"Error updating user profile: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "status": "error",
+                "message": "Failed to update user profile"
             }
         )
