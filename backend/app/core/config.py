@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Literal
+import cloudinary
 
 class Settings(BaseSettings):
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
@@ -55,5 +56,22 @@ class Settings(BaseSettings):
     COOKIE_PATH:str = "/"
     SIGNIN_KEY:str = ""
     PASSWORD_RESET_TOKEN_EXPIRATION_MINUTES:int = 3 if ENVIRONMENT == "local" else 5
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
+    
+    ALLOWED_MIME_TYPE: list[str] = [
+        "image/jpeg",
+        "image/png",
+        "image/jpg",
+    ]
+    MAX_FILE_SIZE_MB: int = 5 * 1024 * 1024  # 5 MB
+    MAX_DIMENSION: int = 4096
     
 settings = Settings() 
+
+cloudinary.config(
+    cloud_name = settings.CLOUDINARY_CLOUD_NAME,
+    api_key = settings.CLOUDINARY_API_KEY,
+    api_secret = settings.CLOUDINARY_API_SECRET,
+)
