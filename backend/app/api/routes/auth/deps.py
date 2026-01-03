@@ -15,7 +15,7 @@ async def get_current_user(session:AsyncSession = Depends(get_session), access_t
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
                 "status": "error",
-                "message": "Not Authenticatec",
+                "message": "Not Authenticated",
                 "action": "Please login to access this resource"
             }
         )

@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""
     
-    ALLOWED_MIME_TYPE: list[str] = [
+    ALLOWED_MIME_TYPES: list[str] = [
         "image/jpeg",
         "image/png",
         "image/jpg",
